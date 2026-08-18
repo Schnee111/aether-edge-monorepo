@@ -1,0 +1,1 @@
+import test from "node:test"; import assert from "node:assert"; import { TelemetrySchema } from "./index.js"; test("contracts work", () => { assert.strictEqual(TelemetrySchema.validate({ id: "1", status: "ok" }), true); });
