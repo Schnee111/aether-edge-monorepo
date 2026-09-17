@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14151a"/>
+      <stop offset="100%" stop-color="#090a0d"/>
+    </linearGradient>
+    <linearGradient id="prism" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d68f" stop-opacity="0.88"/>
+      <stop offset="50%" stop-color="#00f0ff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.98"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="120" fill="url(#bg)" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="rgba(0,240,255,0.10)" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <path d="M224 136 L112 360 L168 360 L194 304 L254 304 L239 264 L212 264 L224 236 Z" fill="url(#prism)" filter="url(#glow)"/>
+  <path d="M260 136 L400 136 L400 176 L300 176 L300 236 L384 236 L384 276 L300 276 L300 320 L400 320 L400 360 L260 360 Z" fill="url(#prism)" filter="url(#glow)"/>
+  <polygon points="256,196 272,216 256,236 240,216" fill="#ffffff" filter="url(#glow)"/>
+</svg>

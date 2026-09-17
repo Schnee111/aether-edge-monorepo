@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AETER — Access Authorization</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #17181c;
+    --ink-soft: #4b4f58;
+    --line: rgba(23, 24, 28, 0.08);
+    --accent: #2e9e6b;
+    --danger: #d93838;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(1100px 700px at 12% 8%, rgba(255, 206, 150, 0.50), transparent 60%),
+      radial-gradient(1000px 650px at 88% 12%, rgba(168, 203, 232, 0.55), transparent 55%),
+      radial-gradient(900px 800px at 75% 95%, rgba(212, 201, 184, 0.65), transparent 60%),
+      radial-gradient(700px 500px at 20% 85%, rgba(188, 214, 203, 0.50), transparent 55%),
+      linear-gradient(160deg, #f5f2ec 0%, #e9e6e0 100%);
+    background-attachment: fixed;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .frame {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.65);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    backdrop-filter: blur(30px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 24px;
+    box-shadow: 0 24px 60px -20px rgba(35, 45, 65, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  .card-body {
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .header-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-meta h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .header-meta p {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+  }
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.7);
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .target-badge {
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(23, 24, 28, 0.04);
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .target-badge span:last-child {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Biometric Button */
+  .btn-bio {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    background: #17181c;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: 0 10px 24px -10px rgba(23, 24, 28, 0.3);
+  }
+  .btn-bio:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -10px rgba(23, 24, 28, 0.4);
+    background: #24262c;
+  }
+  .btn-bio:active {
+    transform: translateY(1px);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: rgba(23, 24, 28, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* Form */
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+  input[type="password"] {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(23, 24, 28, 0.12);
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 13.5px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  input[type="password"]:focus {
+    border-color: rgba(23, 24, 28, 0.4);
+    box-shadow: 0 0 0 3px rgba(23, 24, 28, 0.06);
+    background: #ffffff;
+  }
+  .btn-submit {
+    width: 100%;
+    padding: 13px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--ink);
+    border: 1px solid rgba(23, 24, 28, 0.12);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-submit:hover {
+    background: #ffffff;
+    border-color: rgba(23, 24, 28, 0.25);
+    transform: translateY(-1px);
+  }
+  .btn-submit:active {
+    transform: translateY(1px);
+  }
+
+  /* Clean Minimal Inline Status */
+  .status-area {
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .status-text {
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-text.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .status-text.error {
+    color: var(--danger);
+  }
+  .status-text.success {
+    color: var(--accent);
+  }
+  .status-text.info {
+    color: var(--ink-soft);
+  }
+  .status-dot {
+    width: 5.5px;
+    height: 5.5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  footer {
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--ink-soft);
+    border-radius: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="glass card-body">
+    <div class="header-meta">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="/icon.svg" style="width:36px;height:36px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.15)" alt="AETER Logo">
+        <div>
+          <h1>Authentication</h1>
+          <p>aeter.my.id · central security hub</p>
+        </div>
+      </div>
+      <div class="live"><span class="dot"></span><span class="mono" id="clock">--:--</span></div>
+    </div>
+
+    <div class="target-badge mono">
+      <span>Destination</span>
+      <span id="destLabel">--</span>
+    </div>
+
+    <!-- Biometric Button (1-Tap Passkey) -->
+    <button id="btnBio" type="button" class="btn-bio">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 004.07 9m13.064 12.01A20.916 20.916 0 0019 11c0-1.85-.306-3.63-.873-5.286M9.88 6.12A3.99 3.99 0 0112 5c1.25 0 2.378.572 3.12 1.472"></path>
+      </svg>
+      <span>Verify with Fingerprint / Passkey</span>
+    </button>
+
+    <div class="divider">or single secret</div>
+
+    <!-- Password Form -->
+    <form id="pwForm">
+      <div class="input-wrapper">
+        <input type="password" id="password" placeholder="Master Password" required autocomplete="current-password" autofocus />
+      </div>
+      <button type="submit" id="btnSubmit" class="btn-submit">Authenticate →</button>
+    </form>
+
+    <div class="status-area">
+      <div id="statusText" class="status-text mono">
+        <span class="status-dot"></span>
+        <span id="statusMsg">Ready</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="glass">
+    <span>Zero-trust perimeter</span>
+    <span class="mono">aeter core</span>
+  </footer>
+</div>
+
+<script>
+  const { startAuthentication } = SimpleWebAuthnBrowser;
+
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    const wib = new Date(now.getTime() + (7 * 60 + now.getTimezoneOffset()) * 60000);
+    const hrs = String(wib.getHours()).padStart(2, '0');
+    const mins = String(wib.getMinutes()).padStart(2, '0');
+    document.getElementById('clock').innerText = hrs + ':' + mins + ' WIB';
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Return URL
+  const params = new URLSearchParams(window.location.search);
+  const returnTo = params.get('return_to') || 'https://aeter.my.id/';
+
+  try {
+    const u = new URL(returnTo, window.location.origin);
+    document.getElementById('destLabel').innerText = u.hostname + (u.pathname !== '/' ? u.pathname : '');
+  } catch (e) {
+    document.getElementById('destLabel').innerText = returnTo;
+  }
+
+  let statusTimer = null;
+  function showStatus(msg, type = 'error') {
+    clearTimeout(statusTimer);
+    const el = document.getElementById('statusText');
+    const txt = document.getElementById('statusMsg');
+    txt.innerText = msg;
+    el.className = 'status-text mono ' + type + ' show';
+
+    if (type !== 'success') {
+      statusTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 3000);
+    }
+  }
+
+  const ALLOWED_DOMAINS = [
+    'aeter.my.id',
+    'shorekeeper.my.id',
+    'tethys.web.id',
+    'schnee.web.id',
+    'localhost',
+    '127.0.0.1'
+  ];
+
+  function isAllowedHost(hostname) {
+    if (!hostname) return false;
+    const clean = hostname.split(':')[0].toLowerCase();
+    return ALLOWED_DOMAINS.some(d => clean === d || clean.endsWith('.' + d));
+  }
+
+  function handleSuccessfulAuth(token) {
+    showStatus('Access granted · Redirecting...', 'success');
+    
+    try {
+      const u = new URL(returnTo, window.location.origin);
+      if (isAllowedHost(u.hostname)) {
+        if (!u.hostname.endsWith('aeter.my.id')) {
+          const callbackUrl = u.origin + '/auth/callback?token=' + encodeURIComponent(token) + '&return_to=' + encodeURIComponent(returnTo);
+          setTimeout(() => {
+            window.location.href = callbackUrl;
+          }, 300);
+          return;
+        }
+        setTimeout(() => {
+          window.location.href = returnTo;
+        }, 400);
+        return;
+      }
+    } catch(e) {}
+
+    // Untrusted external target: safe fallback
+    setTimeout(() => {
+      window.location.href = 'https://aeter.my.id/';
+    }, 400);
+  }
+
+  // Passkey Trigger
+  document.getElementById('btnBio').addEventListener('click', async () => {
+    try {
+      showStatus('Requesting biometric prompt...', 'info');
+      const optRes = await fetch('/api/auth/auth-options', { method: 'POST' });
+      if (!optRes.ok) {
+        let errMsg = 'Biometric request failed';
+        try {
+          const errData = await optRes.json();
+          errMsg = errData.message || errMsg;
+        } catch(e) {
+          errMsg = `Server error (${optRes.status})`;
+        }
+        showStatus(errMsg, 'error');
+        return;
+      }
+
+      let data;
+      try {
+        data = await optRes.json();
+      } catch (e) {
+        showStatus('Invalid server response', 'error');
+        return;
+      }
+
+      const { options, challengeId, hasPasskeys } = data;
+      if (!hasPasskeys) {
+        showStatus('No passkeys registered', 'error');
+        return;
+      }
+
+      const asseResp = await startAuthentication({ optionsJSON: options });
+      const verifyRes = await fetch('/api/auth/auth-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: asseResp, challengeId })
+      });
+
+      if (!verifyRes.ok) {
+        let errMsg = 'Verification rejected';
+        try {
+          const errData = await verifyRes.json();
+          errMsg = errData.message || errMsg;
+        } catch(e) {
+          errMsg = `Server error (${verifyRes.status})`;
+        }
+        showStatus(errMsg, 'error');
+        return;
+      }
+
+      const result = await verifyRes.json();
+      if (result.success && result.token) {
+        handleSuccessfulAuth(result.token);
+      } else {
+        showStatus(result.message || 'Biometric verification failed', 'error');
+      }
+    } catch (err) {
+      if (err.name !== 'NotAllowedError') {
+        showStatus(err.message || 'Verification failed', 'error');
+      } else {
+        showStatus('Verification cancelled', 'info');
+      }
+    }
+  });
+
+  // Password Submit
+  document.getElementById('pwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('password').value;
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerText = 'Verifying...';
+
+    try {
+      const res = await fetch('/api/auth/login-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Invalid credentials';
+        try {
+          const errData = await res.json();
+          errMsg = errData.message || errMsg;
+        } catch(e) {
+          errMsg = `Server error (${res.status})`;
+        }
+        showStatus(errMsg, 'error');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success && data.token) {
+        handleSuccessfulAuth(data.token);
+      } else {
+        showStatus(data.message || 'Invalid credentials', 'error');
+      }
+    } catch (err) {
+      showStatus('Auth server unreachable', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Authenticate →';
+    }
+  });
+</script>
+</body>
+</html>

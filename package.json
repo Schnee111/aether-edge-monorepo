@@ -1,1 +1,1 @@
-{"name": "aether-edge-monorepo", "private": true, "type": "module", "scripts": {"test": "node --test packages/contracts/test.js apps/api/test.js"}}
+{"name": "aether-edge-monorepo", "private": true, "type": "module", "scripts": {"test": "node --test packages/contracts/test.js apps/api/test.js apps/auth-gate/test.js"}}
